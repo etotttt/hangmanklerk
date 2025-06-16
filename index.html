@@ -44,6 +44,7 @@
         #timer {
             font-feature-settings: 'tnum';
             font-variant-numeric: tabular-nums;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -62,7 +63,7 @@
         <div class="flex justify-center items-center gap-x-6 gap-y-2 flex-wrap mb-6">
             <p id="attempts-text" class="text-slate-500"></p>
             <p id="streak-counter" class="text-slate-500 font-semibold"></p>
-            <p id="timer" class="text-slate-500 font-semibold text-lg">⏳ 01:00</p>
+            <p id="timer" class="text-slate-500 font-semibold text-lg" title="Включить/выключить таймер"></p>
         </div>
         
         <!-- Секция с рисунком -->
@@ -122,7 +123,6 @@
 
     <!-- Основной скрипт игры -->
     <script>
-        // ИСПРАВЛЕНИЕ: Список слов теперь находится здесь, а не в отдельном файле.
         const wordList = [
             "аванс", "авизо", "аккредитив", "актив", "акцепт", "акциз", "акт", "амортизация", "анализ", "аннуитет", "аренда", "аудит",
             "баланс", "банкротство", "бюджет", "брокер", "валюта", "ведомость", "вексель", "взнос", "выручка", "гудвилл",
@@ -140,17 +140,18 @@
         ];
         
         const maxMistakes = 9;
-        const gameTime = 60; // 1 минута на слово
+        const gameTime = 60;
 
         let sessionWordList = []; 
         let secretWord = '';
         let guessedLetters = [];
         let mistakes = 0;
         let winStreak = 0;
-        let timer;
+        let timerInterval;
         let timeLeft;
         let gameEnded = false;
         let isPaused = false;
+        let isTimerActive = false; // НОВИНКА: Состояние таймера
 
         // --- Элементы DOM ---
         const wordDisplay = document.getElementById('word-display');
@@ -212,41 +213,50 @@
             updateStreakDisplay();
             resetHangman();
             generateKeyboard();
-            startTimer();
             
+            // НОВИНКА: Сброс таймера в неактивное состояние
+            isTimerActive = false;
+            pauseTimer(); // Останавливаем старый интервал
+            updateTimerDisplay(); // Обновляем вид
+
             modal.classList.add('hidden');
             pauseMenu.classList.add('hidden');
             adBanner.classList.add('hidden');
         }
         
         function startTimer() {
-            clearInterval(timer);
+            if (!isTimerActive) return;
             timeLeft = gameTime;
             updateTimerDisplay();
             resumeTimer();
         }
         
         function pauseTimer() {
-            clearInterval(timer);
+            clearInterval(timerInterval);
         }
 
         function resumeTimer() {
-            if (gameEnded || isPaused) return;
+            if (gameEnded || isPaused || !isTimerActive) return;
 
-            timer = setInterval(() => {
+            timerInterval = setInterval(() => {
                 timeLeft--;
                 updateTimerDisplay();
                 if (timeLeft <= 0) {
-                    clearInterval(timer);
                     showEndGameModal(false, 'time');
                 }
             }, 1000);
         }
 
         function updateTimerDisplay() {
-            const minutes = Math.floor(timeLeft / 60);
-            const seconds = timeLeft % 60;
-            timerDisplay.textContent = `⏳ ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            if (isTimerActive) {
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                timerDisplay.textContent = `⏳ ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                timerDisplay.classList.remove('opacity-50');
+            } else {
+                timerDisplay.textContent = '⏱️ Таймер выкл.';
+                timerDisplay.classList.add('opacity-50');
+            }
         }
 
         function updateAttemptsText() {
@@ -347,7 +357,18 @@
             modal.classList.remove('hidden');
         }
 
-        // --- Обработчики событий меню ---
+        // --- Обработчики событий ---
+
+        timerDisplay.addEventListener('click', () => {
+            if (gameEnded) return;
+            isTimerActive = !isTimerActive;
+            if (isTimerActive) {
+                startTimer();
+            } else {
+                pauseTimer();
+                updateTimerDisplay();
+            }
+        });
 
         menuBtn.addEventListener('click', () => {
             if (gameEnded) return;
