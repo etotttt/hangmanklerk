@@ -120,236 +120,257 @@
         </div>
     </div>
 
-    <!-- ИЗМЕНЕНИЕ: Сначала подключаем файл со словами -->
-    <script src="words.js"></script>
-    
     <!-- Основной скрипт игры -->
     <script>
-        // ИСПРАВЛЕНИЕ: Весь игровой код обернут в 'DOMContentLoaded', чтобы гарантировать загрузку words.js
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- Исходные данные и переменные ---
-            // Массив wordList теперь загружается из файла words.js
-            const maxMistakes = 9;
-            const gameTime = 60; // 1 минута на слово
+        // ИСПРАВЛЕНИЕ: Список слов теперь находится здесь, а не в отдельном файле.
+        const wordList = [
+            "аванс", "авизо", "аккредитив", "актив", "акцепт", "акциз", "акт", "амортизация", "анализ", "аннуитет", "аренда", "аудит",
+            "баланс", "банкротство", "бюджет", "брокер", "валюта", "ведомость", "вексель", "взнос", "выручка", "гудвилл",
+            "дебет", "дебитор", "девальвация", "дедлайн", "декларация", "демпинг", "деноминация", "депозит", "депонент", "дериватив", "дефляция", "дивиденд", "дилер", "дисконт", "доверенность", "договор", "доклад", "документ", "дотация", "доход",
+            "ЕНВД", "журнал", "задолженность", "займ", "залог", "зарплата", "затраты", "издержки", "износ", "имущество", "импорт", "инвентаризация", "инвестиция", "инвойс", "индексация", "индоссамент", "инкассация", "инфляция", "ипотека",
+            "казначейство", "калькуляция", "капитал", "касса", "квартал", "квитанция", "клиринг", "конвертация", "консалтинг", "контрагент", "контокоррент", "котировка", "коэффициент", "кредит", "кредитор",
+            "лизинг", "ликвидность", "лимит", "лицензия", "маржа", "мониторинг", "МСФО", "накладная", "налог", "наценка", "неустойка", "номинал", "норматив", "НДС", "НДФЛ",
+            "облигация", "оборот", "обязательство", "овердрафт", "овернайт", "оклад", "операция", "основной", "отчет", "оферта", "оффшор", "оценка",
+            "пай", "пассив", "патент", "ПБУ", "пени", "переоценка", "платеж", "платежка", "подотчет", "портфель", "поставщик", "посредник", "пошлина", "премия", "прибыль", "проводка", "прогноз", "профицит", "процент",
+            "расписка", "расход", "ревизия", "регресс", "резерв", "резидент", "реквизиты", "рекламация", "рента", "рентабельность", "реструктуризация", "роялти", "рынок",
+            "сальдо", "санкция", "сбор", "себестоимость", "сертификат", "смета", "собственность", "справка", "ссуда", "стандарт", "ставка", "статистика", "страхование", "субаренда", "субвенция", "субсидия", "субсчет", "счет",
+            "тариф", "тендер", "товар", "транш", "трейдер", "убыток", "уценка", "учет", "УСН", "учредитель",
+            "факторинг", "фактура", "финансы", "фонд", "форвард", "франшиза", "фьючерс", "холдинг",
+            "цессия", "чек", "штраф", "экспорт", "эмбарго", "эмиссия", "эмитент", "экономика"
+        ];
+        
+        const maxMistakes = 9;
+        const gameTime = 60; // 1 минута на слово
 
-            let sessionWordList = []; 
-            let secretWord = '';
-            let guessedLetters = [];
-            let mistakes = 0;
-            let winStreak = 0;
-            let timer;
-            let timeLeft;
-            let gameEnded = false;
-            let isPaused = false;
+        let sessionWordList = []; 
+        let secretWord = '';
+        let guessedLetters = [];
+        let mistakes = 0;
+        let winStreak = 0;
+        let timer;
+        let timeLeft;
+        let gameEnded = false;
+        let isPaused = false;
 
-            // --- Элементы DOM ---
-            const wordDisplay = document.getElementById('word-display');
-            const keyboardDiv = document.getElementById('keyboard');
-            const attemptsText = document.getElementById('attempts-text');
-            const streakCounter = document.getElementById('streak-counter');
-            const timerDisplay = document.getElementById('timer');
-            const hangmanParts = document.querySelectorAll('.hangman-part');
-            const modal = document.getElementById('modal');
-            const modalTitle = document.getElementById('modal-title');
-            const modalText = document.getElementById('modal-text');
-            const playAgainBtn = document.getElementById('play-again-btn');
-            const adBanner = document.getElementById('ad-banner');
-            const menuBtn = document.getElementById('menu-btn');
-            const pauseMenu = document.getElementById('pause-menu');
-            const resumeBtn = document.getElementById('resume-btn');
-            const newGameBtn = document.getElementById('new-game-btn');
+        // --- Элементы DOM ---
+        const wordDisplay = document.getElementById('word-display');
+        const keyboardDiv = document.getElementById('keyboard');
+        const attemptsText = document.getElementById('attempts-text');
+        const streakCounter = document.getElementById('streak-counter');
+        const timerDisplay = document.getElementById('timer');
+        const hangmanParts = document.querySelectorAll('.hangman-part');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalText = document.getElementById('modal-text');
+        const playAgainBtn = document.getElementById('play-again-btn');
+        const adBanner = document.getElementById('ad-banner');
+        const menuBtn = document.getElementById('menu-btn');
+        const pauseMenu = document.getElementById('pause-menu');
+        const resumeBtn = document.getElementById('resume-btn');
+        const newGameBtn = document.getElementById('new-game-btn');
 
-            // --- Функции ---
+        // --- Функции ---
 
-            function shuffleArray(array) {
-                for (let i = array.length - 1; i > 0; i--) {
-                    const j = Math.floor(Math.random() * (i + 1));
-                    [array[i], array[j]] = [array[j], array[i]];
-                }
-                return array;
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function prepareWordList() {
+            if (sessionWordList.length === 0) {
+                sessionWordList = shuffleArray([...wordList]);
+            }
+        }
+
+        function setupGame() {
+            prepareWordList(); 
+            
+            gameEnded = false;
+            isPaused = false;
+            mistakes = 0;
+            guessedLetters = [];
+            
+            if (sessionWordList.length === 0) {
+                alert("Поздравляем! Вы отгадали все слова. Начинаем заново.");
+                prepareWordList();
             }
 
-            function prepareWordList() {
-                if (sessionWordList.length === 0) {
-                    sessionWordList = shuffleArray([...wordList]);
-                }
-            }
+            secretWord = sessionWordList.pop(); 
 
-            function setupGame() {
-                prepareWordList(); 
-                
-                gameEnded = false;
-                isPaused = false;
-                mistakes = 0;
-                guessedLetters = [];
-                secretWord = sessionWordList.pop(); 
-                
-                wordDisplay.innerHTML = secretWord.split('').map(() => `<span class="inline-block mx-1 sm:mx-2 w-8 sm:w-10 text-center border-b-4 border-slate-400">&nbsp;</span>`).join('');
-                
-                updateAttemptsText();
-                updateStreakDisplay();
-                resetHangman();
-                generateKeyboard();
-                startTimer();
-                
-                modal.classList.add('hidden');
-                pauseMenu.classList.add('hidden');
-                adBanner.classList.add('hidden');
+            if (!secretWord) {
+                console.error("Не удалось получить секретное слово. Проверьте список слов.");
+                alert("Произошла ошибка при загрузке слова. Пожалуйста, обновите страницу.");
+                return;
             }
             
-            function startTimer() {
-                clearInterval(timer);
-                timeLeft = gameTime;
+            wordDisplay.innerHTML = secretWord.split('').map(() => `<span class="inline-block mx-1 sm:mx-2 w-8 sm:w-10 text-center border-b-4 border-slate-400">&nbsp;</span>`).join('');
+            
+            updateAttemptsText();
+            updateStreakDisplay();
+            resetHangman();
+            generateKeyboard();
+            startTimer();
+            
+            modal.classList.add('hidden');
+            pauseMenu.classList.add('hidden');
+            adBanner.classList.add('hidden');
+        }
+        
+        function startTimer() {
+            clearInterval(timer);
+            timeLeft = gameTime;
+            updateTimerDisplay();
+            resumeTimer();
+        }
+        
+        function pauseTimer() {
+            clearInterval(timer);
+        }
+
+        function resumeTimer() {
+            if (gameEnded || isPaused) return;
+
+            timer = setInterval(() => {
+                timeLeft--;
                 updateTimerDisplay();
-                resumeTimer();
-            }
-            
-            function pauseTimer() {
-                clearInterval(timer);
-            }
-
-            function resumeTimer() {
-                if (gameEnded || isPaused) return;
-
-                timer = setInterval(() => {
-                    timeLeft--;
-                    updateTimerDisplay();
-                    if (timeLeft <= 0) {
-                        clearInterval(timer);
-                        showEndGameModal(false, 'time');
-                    }
-                }, 1000);
-            }
-
-            function updateTimerDisplay() {
-                const minutes = Math.floor(timeLeft / 60);
-                const seconds = timeLeft % 60;
-                timerDisplay.textContent = `⏳ ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-            }
-
-            function updateAttemptsText() {
-                const remainingAttempts = maxMistakes - mistakes;
-                attemptsText.textContent = `Осталось попыток: ${remainingAttempts}`;
-            }
-            
-            function updateStreakDisplay() {
-                streakCounter.textContent = `🏆 Побед подряд: ${winStreak}`;
-            }
-
-            function resetHangman() {
-                hangmanParts.forEach(part => part.classList.remove('visible'));
-            }
-
-            function generateKeyboard() {
-                keyboardDiv.innerHTML = '';
-                const alphabet = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
-                alphabet.split('').forEach(letter => {
-                    const button = document.createElement('button');
-                    button.textContent = letter.toUpperCase();
-                    button.className = "key-btn w-10 h-12 sm:w-12 sm:h-14 bg-slate-200 hover:bg-slate-300 rounded-lg text-xl sm:text-2xl font-semibold";
-                    button.addEventListener('click', () => handleGuess(letter));
-                    keyboardDiv.appendChild(button);
-                });
-            }
-            
-            function renderWord() {
-                 wordDisplay.innerHTML = secretWord.split('').map(letter => {
-                    const isGuessed = guessedLetters.includes(letter);
-                    return `<span class="inline-block mx-1 sm:mx-2 w-8 sm:w-10 text-center border-b-4 ${isGuessed ? 'border-green-500' : 'border-slate-400'}">${isGuessed ? letter.toUpperCase() : '&nbsp;'}</span>`;
-                }).join('');
-            }
-
-            function handleGuess(letter) {
-                if (gameEnded || isPaused || guessedLetters.includes(letter)) {
-                    return;
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    showEndGameModal(false, 'time');
                 }
+            }, 1000);
+        }
 
-                guessedLetters.push(letter);
-                const button = Array.from(keyboardDiv.children).find(btn => btn.textContent.toLowerCase() === letter);
+        function updateTimerDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            timerDisplay.textContent = `⏳ ${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
 
-                if (secretWord.includes(letter)) {
-                    if (button) button.classList.add('correct');
-                    renderWord();
-                    checkWinCondition();
-                } else {
-                    mistakes++;
-                    if (button) button.classList.add('incorrect');
-                    updateHangmanDrawing();
-                    updateAttemptsText();
-                    checkLoseCondition();
-                }
-                if (button) button.disabled = true;
-            }
-            
-            function updateHangmanDrawing() {
-                if (mistakes > 0 && mistakes <= hangmanParts.length) {
-                     const part = document.getElementById(`hg-part-${mistakes}`);
-                     if (part) {
-                        part.classList.add('visible');
-                     }
-                }
-            }
+        function updateAttemptsText() {
+            const remainingAttempts = maxMistakes - mistakes;
+            attemptsText.textContent = `Осталось попыток: ${remainingAttempts}`;
+        }
+        
+        function updateStreakDisplay() {
+            streakCounter.textContent = `🏆 Побед подряд: ${winStreak}`;
+        }
 
-            function checkWinCondition() {
-                const allLettersGuessed = secretWord.split('').every(letter => guessedLetters.includes(letter));
-                if (allLettersGuessed) {
-                    showEndGameModal(true);
-                }
-            }
-            
-            function checkLoseCondition() {
-                if (mistakes >= maxMistakes) {
-                    showEndGameModal(false, 'mistakes');
-                }
-            }
+        function resetHangman() {
+            hangmanParts.forEach(part => part.classList.remove('visible'));
+        }
 
-            function showEndGameModal(isWin, reason = '') {
-                if (gameEnded) return; 
-                gameEnded = true;
-                pauseTimer();
-
-                if (isWin) {
-                    winStreak++;
-                    modalTitle.textContent = "Баланс сошёлся! 🎉";
-                    modalText.textContent = `Вы успешно угадали термин: "${secretWord.toUpperCase()}"`;
-                } else {
-                    winStreak = 0;
-                    if (reason === 'time') {
-                        modalTitle.textContent = "Время вышло... ⌛";
-                    } else {
-                        modalTitle.textContent = "Ошибка в отчёте... 💀";
-                    }
-                    modalText.textContent = `Загаданный термин был: "${secretWord.toUpperCase()}"`;
-                    adBanner.classList.remove('hidden');
-                }
-                modal.classList.remove('hidden');
-            }
-
-            // --- Обработчики событий меню ---
-
-            menuBtn.addEventListener('click', () => {
-                if (gameEnded) return;
-                isPaused = true;
-                pauseTimer();
-                pauseMenu.classList.remove('hidden');
+        function generateKeyboard() {
+            keyboardDiv.innerHTML = '';
+            const alphabet = 'абвгдеёжзийклмнопрстуфхцчшщъыьэюя';
+            alphabet.split('').forEach(letter => {
+                const button = document.createElement('button');
+                button.textContent = letter.toUpperCase();
+                button.className = "key-btn w-10 h-12 sm:w-12 sm:h-14 bg-slate-200 hover:bg-slate-300 rounded-lg text-xl sm:text-2xl font-semibold";
+                button.addEventListener('click', () => handleGuess(letter));
+                keyboardDiv.appendChild(button);
             });
+        }
+        
+        function renderWord() {
+             wordDisplay.innerHTML = secretWord.split('').map(letter => {
+                const isGuessed = guessedLetters.includes(letter);
+                return `<span class="inline-block mx-1 sm:mx-2 w-8 sm:w-10 text-center border-b-4 ${isGuessed ? 'border-green-500' : 'border-slate-400'}">${isGuessed ? letter.toUpperCase() : '&nbsp;'}</span>`;
+            }).join('');
+        }
 
-            resumeBtn.addEventListener('click', () => {
-                isPaused = false;
-                resumeTimer();
-                pauseMenu.classList.add('hidden');
-            });
+        function handleGuess(letter) {
+            if (gameEnded || isPaused || guessedLetters.includes(letter)) {
+                return;
+            }
 
-            newGameBtn.addEventListener('click', () => {
+            guessedLetters.push(letter);
+            const button = Array.from(keyboardDiv.children).find(btn => btn.textContent.toLowerCase() === letter);
+
+            if (secretWord.includes(letter)) {
+                if (button) button.classList.add('correct');
+                renderWord();
+                checkWinCondition();
+            } else {
+                mistakes++;
+                if (button) button.classList.add('incorrect');
+                updateHangmanDrawing();
+                updateAttemptsText();
+                checkLoseCondition();
+            }
+            if (button) button.disabled = true;
+        }
+        
+        function updateHangmanDrawing() {
+            if (mistakes > 0 && mistakes <= hangmanParts.length) {
+                 const part = document.getElementById(`hg-part-${mistakes}`);
+                 if (part) {
+                    part.classList.add('visible');
+                 }
+            }
+        }
+
+        function checkWinCondition() {
+            const allLettersGuessed = secretWord.split('').every(letter => guessedLetters.includes(letter));
+            if (allLettersGuessed) {
+                showEndGameModal(true);
+            }
+        }
+        
+        function checkLoseCondition() {
+            if (mistakes >= maxMistakes) {
+                showEndGameModal(false, 'mistakes');
+            }
+        }
+
+        function showEndGameModal(isWin, reason = '') {
+            if (gameEnded) return; 
+            gameEnded = true;
+            pauseTimer();
+
+            if (isWin) {
+                winStreak++;
+                modalTitle.textContent = "Баланс сошёлся! 🎉";
+                modalText.textContent = `Вы успешно угадали термин: "${secretWord.toUpperCase()}"`;
+            } else {
                 winStreak = 0;
-                setupGame();
-            });
+                if (reason === 'time') {
+                    modalTitle.textContent = "Время вышло... ⌛";
+                } else {
+                    modalTitle.textContent = "Ошибка в отчёте... 💀";
+                }
+                modalText.textContent = `Загаданный термин был: "${secretWord.toUpperCase()}"`;
+                adBanner.classList.remove('hidden');
+            }
+            modal.classList.remove('hidden');
+        }
 
-            playAgainBtn.addEventListener('click', setupGame);
-            
-            // --- Первый запуск ---
+        // --- Обработчики событий меню ---
+
+        menuBtn.addEventListener('click', () => {
+            if (gameEnded) return;
+            isPaused = true;
+            pauseTimer();
+            pauseMenu.classList.remove('hidden');
+        });
+
+        resumeBtn.addEventListener('click', () => {
+            isPaused = false;
+            resumeTimer();
+            pauseMenu.classList.add('hidden');
+        });
+
+        newGameBtn.addEventListener('click', () => {
+            winStreak = 0;
             setupGame();
         });
+
+        playAgainBtn.addEventListener('click', setupGame);
+        
+        // --- Первый запуск ---
+        setupGame();
     </script>
 </body>
 </html>
